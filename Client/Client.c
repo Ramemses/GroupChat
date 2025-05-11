@@ -6,7 +6,7 @@
 
 void startListeningAndPrintMessagesOnNewThread(int fd);
 
-void listenAndPrint(int socketFD);
+void* listenAndPrint(void* socketPT);
 
 void readConsoleEntriesAndSendToServer(int socketFD);
 
@@ -28,7 +28,7 @@ int main() {
 	
 
 
-    int result = connect(socketFD,address,sizeof (*address));
+    int result = connect(socketFD, (struct sockaddr*)address, sizeof (*address));
 
     if(result == 0)
         printf("connection was successful\n");
@@ -75,13 +75,15 @@ void readConsoleEntriesAndSendToServer(int socketFD) {
     }
 }
 
-void startListeningAndPrintMessagesOnNewThread(int socketFD) {
-
+void startListeningAndPrintMessagesOnNewThread(int socketFD) 
+{
     pthread_t id ;
-    pthread_create(&id,NULL,listenAndPrint,socketFD);
+    pthread_create(&id, NULL, listenAndPrint, (void*)&socketFD);
+
 }
 
-void listenAndPrint(int socketFD) {
+void* listenAndPrint(void* socketPT) {
+	int socketFD = *(int*)socketPT;
     char buffer[1024];
 
     while (true)
