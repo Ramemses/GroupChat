@@ -1,8 +1,8 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <pthread.h>
-#include "../Utils.h"
-#include "../Help.h"
+#include "../../Utils/Utils.h"
+#include "../../Utils/Help.h"
 
 struct AcceptedSocket
 {
