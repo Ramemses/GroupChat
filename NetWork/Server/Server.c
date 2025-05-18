@@ -3,11 +3,6 @@
 #include <pthread.h>
 #include "../../Utils/Utils.h"
 #include "../../Utils/Help.h"
-#include "../../Graphics/ChatBox.h"
-
-
-
-pthread_mutex_t client_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct AcceptedSocket
 {
@@ -17,44 +12,42 @@ struct AcceptedSocket
     bool acceptedSuccessfully;
 };
 
-struct AcceptedSocket * accept_connection(int serverSocketFD);
+struct AcceptedSocket * acceptIncomingConnection(int serverSocketFD);
+void acceptNewConnectionAndReceiveAndPrintItsData(int serverSocketFD);
+void receiveAndPrintIncomingData(int socketFD);
 
-void get_data(int socketFD);
+void startAcceptingIncomingConnections(int serverSocketFD);
 
-void launch_server(int serverSocketFD);
+void receiveAndPrintIncomingDataOnSeparateThread(struct AcceptedSocket *pSocket);
 
-void get_new_client(struct AcceptedSocket *pSocket);
-
-void broadcast_data(char *buffer,int socketFD);
+void sendReceivedMessageToTheOtherClients(char *buffer,int socketFD);
 
 struct AcceptedSocket acceptedSockets[10] ;
 int acceptedSocketsCount = 0;
 
 
-void launch_server(int serverSocketFD) {
+void startAcceptingIncomingConnections(int serverSocketFD) {
 
     while(true)
     {
-        struct AcceptedSocket* clientSocket  = accept_connection(serverSocketFD); // Add check
+        struct AcceptedSocket* clientSocket  = acceptIncomingConnection(serverSocketFD);
         acceptedSockets[acceptedSocketsCount++] = *clientSocket;
 
-        get_new_client(clientSocket);
+        receiveAndPrintIncomingDataOnSeparateThread(clientSocket);
     }
 }
 
 
 
-void get_new_client(struct AcceptedSocket *pSocket) {
+void receiveAndPrintIncomingDataOnSeparateThread(struct AcceptedSocket *pSocket) {
 
-	pthread_mutex_lock(&client_mutex);
     pthread_t id;
-    pthread_create(&id,NULL, get_data ,pSocket->acceptedSocketFD);
-	pthread_mutex_unlock(&client_mutex);
+    pthread_create(&id,NULL,receiveAndPrintIncomingData,pSocket->acceptedSocketFD);
 }
 
-void get_data(int socketFD) {
-
+void receiveAndPrintIncomingData(int socketFD) {
     char buffer[1024];
+
     while (true)
     {
         ssize_t  amountReceived = recv(socketFD,buffer,1024,0);
@@ -63,7 +56,8 @@ void get_data(int socketFD) {
         {
             buffer[amountReceived] = 0;
             printf("%s\n",buffer);
-            broadcast_data(buffer,socketFD);
+
+            sendReceivedMessageToTheOtherClients(buffer,socketFD);
         }
 
         if(amountReceived==0)
@@ -73,19 +67,17 @@ void get_data(int socketFD) {
     close(socketFD);
 }
 
-void broadcast_data(char *buffer,int socketFD) {
-	pthread_mutex_lock(&client_mutex);
+void sendReceivedMessageToTheOtherClients(char *buffer,int socketFD) {
+
     for(int i = 0 ; i<acceptedSocketsCount ; i++)
         if(acceptedSockets[i].acceptedSocketFD !=socketFD)
         {
             send(acceptedSockets[i].acceptedSocketFD,buffer, strlen(buffer),0);
         }
-	pthread_mutex_unlock(&client_mutex);
 
 }
 
-struct AcceptedSocket * accept_connection(int serverSocketFD) {
-
+struct AcceptedSocket * acceptIncomingConnection(int serverSocketFD) {
     struct sockaddr_in  clientAddress ;
     int clientAddressSize = sizeof (struct sockaddr_in);
     int clientSocketFD = accept(serverSocketFD,&clientAddress,&clientAddressSize);
@@ -106,24 +98,23 @@ struct AcceptedSocket * accept_connection(int serverSocketFD) {
 
 int main() {
 
-// create server socketfd
     int serverSocketFD = createTCPIpv4Socket();
 	
-// get ip_addres and usable port of the server
 	char ip[MAX_IPv4_LENGTH];
 	int port;
+
 	get_connection_address(ip, &port);
 
-// bind server => connectable server
+
     struct sockaddr_in *serverAddress = createIPv4Address(ip, port);
-    int result = bind(serverSocketFD, serverAddress, sizeof(*serverAddress));
+
+    int result = bind(serverSocketFD,serverAddress, sizeof(*serverAddress));
     if(result == 0)
         printf("socket was bound successfully\n");
 
-// start listenig incoming connections
     int listenResult = listen(serverSocketFD,10);
 
-    launch_server(serverSocketFD);
+    startAcceptingIncomingConnections(serverSocketFD);
 
     shutdown(serverSocketFD,SHUT_RDWR);
 
