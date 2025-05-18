@@ -115,37 +115,3 @@ void close_chat()
 {
 	endwin();
 }
-
-
-#if 0
-int main(void)
-{
-	init_interface();
-
-	char input[MSG_LENGTH];
-	int length=0;
-
-	while(1)
-	{
-		int status=read_input(input,&length);
-
-		if(status != 1 )
-		{
-			printf("\n");
-			break; 
-		}
-		
-        input[length]= '\0';
-
-        add_message( input );
-
-        memset( input ,0,sizeof( input ));
-        length=0;
-		
-   }
-
-	endwin();
-
-	return 0;
-}
-#endif

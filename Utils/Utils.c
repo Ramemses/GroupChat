@@ -1,7 +1,15 @@
 #include "Utils.h"
 
 
-int createTCPIpv4Socket() { return socket(AF_INET, SOCK_STREAM, 0); }
+int createTCPIpv4Socket() {
+	int sockfd =  socket(AF_INET, SOCK_STREAM, 0); 
+	if (sockfd == -1){
+		perror("Error creating a socket...");
+		exit(1);
+	}
+
+	return sockfd;
+}
 
 
 struct sockaddr_in* createIPv4Address(char *ip, int port) {
