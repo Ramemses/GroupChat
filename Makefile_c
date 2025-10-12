@@ -1,0 +1,23 @@
+CC=gcc
+CFLAGS=-c -Wall 
+LIBS=-lncurses -lpanel 
+
+all: Client
+
+Client: Client.o Help.o Utils.o ChatBox.o
+	$(CC) Client.o Help.o Utils.o ChatBox.o -o Client $(LIBS)  
+
+Client.o: NetWork/Client/Client.c
+	$(CC) $(CFLAGS) NetWork/Client/Client.c
+
+Help.o: Utils/Help.c
+	$(CC) $(CFLAGS) Utils/Help.c
+
+Utils.o: Utils/Utils.c
+	$(CC) $(CFLAGS) Utils/Utils.c
+			
+ChatBox.o: Graphics/ChatBox.c
+	$(CC) $(CFLAGS) Graphics/ChatBox.c  
+
+clean:
+	rm -rf *.o Client

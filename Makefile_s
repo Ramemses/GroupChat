@@ -1,0 +1,23 @@
+CC=gcc
+CFLAGS=-c -Wall
+
+all: Server
+
+
+
+
+Server: Server.o Help.o Utils.o
+	$(CC) Server.o Help.o Utils.o -o Server
+
+Server.o: NetWork/Server/Server.c
+	$(CC) $(CFLAGS) NetWork/Server/Server.c
+
+Help.o: Utils/Help.c
+	$(CC) $(CFLAGS) Utils/Help.c
+
+Utils.o: Utils/Utils.c
+	$(CC) $(CFLAGS) Utils/Utils.c
+			
+clean:
+	rm -rf *.o Server
+
